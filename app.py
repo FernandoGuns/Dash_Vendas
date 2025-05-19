@@ -183,6 +183,7 @@ filtros = {
 }
 
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.CYBORG])
+server = app.server
 
 app.layout = dbc.Container([
     html.H1("📊 Dashboard de Vendas", className="text-center my-4"),
@@ -287,4 +288,4 @@ def atualizar_graficos(tipo, marca, produtos, lojas, clientes):
     return fig1, fig2, fig3, fig4, fig5, fig6
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run_server(debug=True)
