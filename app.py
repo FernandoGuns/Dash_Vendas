@@ -1,182 +1,113 @@
 # -*- coding: utf-8 -*-
-import matplotlib.pyplot as plt
 import pandas as pd
 import plotly.express as px
-import plotly.graph_objects as go
-import plotly.io as pio
 from dash import Dash, dcc, html, Input, Output
-import dash
+import dash_bootstrap_components as dbc  # Import necessário para o tema
 
+# --- Leitura das bases de dados ---
+
+# Lista dos arquivos de vendas
 arquivos_vendas = [
     '/content/Base Vendas - 2020.xlsx',
     '/content/Base Vendas - 2021.xlsx',
     '/content/Base Vendas - 2022.xlsx'
 ]
 
-lista_vendas = [pd.read_excel(arquivo) for arquivo in arquivos_vendas]
+# Padronizando colunas das vendas
+colunas_vendas = ['Data da Venda', 'Ordem de Compra', 'ID Produto', 'ID Cliente', 'Qtd Vendida', 'ID Loja']
+
+# Carregando e padronizando cada base de vendas
+lista_vendas = []
+for arquivo in arquivos_vendas:
+    df_temp = pd.read_excel(arquivo)
+    df_temp.columns = colunas_vendas
+    lista_vendas.append(df_temp)
+
+# Concatenar todas as vendas
 df_vendas = pd.concat(lista_vendas, ignore_index=True)
 
-# Leitura das tabelas
-df_clientes = pd.read_excel('/content/Cadastro Clientes.xlsx', skiprows=2)
-df_produtos = pd.read_excel('/content/Cadastro Produtos.xlsx') # Changed path
-df_lojas = pd.read_excel('/content/Cadastro Lojas.xlsx') # Changed path
-
-# Unificando nome dos clientes: Primeiro Nome + Sobrenome:
-if 'Primeiro Nome' in df_clientes.columns and 'Sobrenome' in df_clientes.columns:
-    df_clientes['Nome Completo'] = df_clientes['Primeiro Nome'].astype(str) + ' ' + df_clientes['Sobrenome'].astype(str)
-    df_clientes.drop(columns=['Primeiro Nome', 'Sobrenome'], inplace=True)
-
-# Verificando o 'ID Produto':
-if 'SKU' in df_produtos.columns:
-    df_produtos.rename(columns={'SKU': 'ID Produto'}, inplace=True)
-
-# Mesclando os dados das vendas com clientes, produtos e lojas
-df_total = df_vendas.merge(df_clientes, on='ID Cliente', how='left') \
-                    .merge(df_produtos, on='ID Produto', how='left') \
-                    .merge(df_lojas, on='ID Loja', how='left')
-
-# Convertando a coluna 'Data da Venda' para datetime:
-df_total['Data da Venda'] = pd.to_datetime(df_total['Data da Venda'], dayfirst=True)
-
-# Criando colunas auxiliares para análise:
-df_total['Ano'] = df_total['Data da Venda'].dt.year
-df_total['Valor da Venda'] = df_total['Qtd Vendida'] * df_total['Preço Unitario']
-
-# Visualizando as primeiras linhas para conferência:
-print(df_total.head())
-print("Base Completa:", df_total.shape)
-
-df_vendas['Data da Venda'] = pd.to_datetime(df_vendas['Data da Venda'], dayfirst=True)
-
-print(f"Base unificada  - Total de registros: {len(df_vendas)}")
-print(df_vendas.head())
-
-# Leitura_Cadastros
-df_clientes = pd.read_excel('/content/Cadastro Clientes.xlsx', header=2) # Corrected the file path
-print(df_clientes.columns)
-
-print("Colunas do df_clientes:", df_clientes.columns.tolist())
-
-df_clientes = df_clientes.drop(columns=[' ', 'Unnamed: 11'], errors='ignore')
-
-df_lojas = pd.read_excel('/content/Cadastro Lojas.xlsx')
-df_produtos = pd.read_excel('/content/Cadastro Produtos.xlsx')
-
-pd.read_excel('/Cadastro Clientes.xlsx', header=None).head(10)
-
-print(df_vendas.columns.tolist())
-
-print(df_clientes.columns.tolist())
-
-print(df_produtos.columns.tolist())
-
-print(df_lojas.columns.tolist())
-
-"""# Tratamento das tabelas"""
-
-df_clientes = pd.read_excel('/content/Cadastro Clientes.xlsx', header=2) # Corrected the file path
-
-colunas_clientes = ['ID Cliente', 'Primeiro Nome', 'Sobrenome', 'Email', 'Genero', 'Data Nascimento', 'Estado Civil', 'Num Filhos', 'Nivel Escolar', 'Documento', 'Coluna10', 'Coluna11']  # Ajuste nomes conforme o arquivo real
-
-print("Colunas lidas:", df_clientes.columns.tolist())
-
-# Verificar se colunas 'Primeiro Nome' e 'Sobrenome' existem
-if 'Primeiro Nome' in df_clientes.columns and 'Sobrenome' in df_clientes.columns:
-    df_clientes['Nome Completo'] = df_clientes['Primeiro Nome'].astype(str) + ' ' + df_clientes['Sobrenome'].astype(str)
-    df_clientes.drop(columns=['Primeiro Nome', 'Sobrenome'], inplace=True)
-else:
-    print("Colunas 'Primeiro Nome' ou 'Sobrenome' não encontradas após a leitura.")
-    print("Colunas atuais:", df_clientes.columns.tolist())
-
-print("Clientes tratados:", df_clientes.shape)
-
-if 'Nome Completo' in df_clientes.columns:
-    print(df_clientes[['ID Cliente', 'Nome Completo']].head())
-else:
-    print("Coluna 'Nome Completo' não criada.")
-    print(df_clientes.head())
-
-
-
-#Renomenadno SKU para ID Produto
-df_produtos.rename(columns={'SKU': 'ID Produto'}, inplace=True)
-print(df_produtos.columns.tolist())
-
-#Renomenando SKU (da tabela) Vendas
-df_vendas.rename(columns={'SKU': 'ID Produto'}, inplace=True)
-print(df_vendas.columns.tolist())
-
-#Leitura das bases de vendas dos anos 2020, 2021 e 2022
-df_vendas2020 = pd.read_excel('/content/Base Vendas - 2020.xlsx')
-df_vendas2021 = pd.read_excel('/content/Base Vendas - 2021.xlsx')
-df_vendas2022 = pd.read_excel('/content/Base Vendas - 2022.xlsx')
-
-#Padronizando os nomes das colunas das bases de vendas
-colunas_padrao = ['Data da Venda', 'Ordem de Compra', 'ID Produto', 'ID Cliente', 'Qtd Vendida', 'ID Loja']
-df_vendas2020.columns = colunas_padrao
-df_vendas2021.columns = colunas_padrao
-df_vendas2022.columns = colunas_padrao
-
-# Unificando todas as vendas num único DataFrame
-df_vendas = pd.concat([df_vendas2020, df_vendas2021, df_vendas2022], ignore_index=True)
-
-# Leitura das  tabelas
+# Leitura cadastros
 df_clientes = pd.read_excel('/content/Cadastro Clientes.xlsx', skiprows=2)
 df_produtos = pd.read_excel('/content/Cadastro Produtos.xlsx')
 df_lojas = pd.read_excel('/content/Cadastro Lojas.xlsx')
 
-# Unificando nome dos clientes: Primeiro Nome + Sobrenome:
+# --- Tratamento dos dados ---
+
+# Unificar nome completo dos clientes
 if 'Primeiro Nome' in df_clientes.columns and 'Sobrenome' in df_clientes.columns:
     df_clientes['Nome Completo'] = df_clientes['Primeiro Nome'].astype(str) + ' ' + df_clientes['Sobrenome'].astype(str)
     df_clientes.drop(columns=['Primeiro Nome', 'Sobrenome'], inplace=True)
 
-# Verificando o 'ID Produto':
+# Renomear coluna SKU para ID Produto em produtos, se existir
 if 'SKU' in df_produtos.columns:
     df_produtos.rename(columns={'SKU': 'ID Produto'}, inplace=True)
 
-# Mesclando os dados das vendas com clientes, produtos e lojas
+# Garantir que a coluna 'ID Produto' também esteja no df_vendas
+if 'SKU' in df_vendas.columns:
+    df_vendas.rename(columns={'SKU': 'ID Produto'}, inplace=True)
+
+# Converter 'Data da Venda' para datetime
+df_vendas['Data da Venda'] = pd.to_datetime(df_vendas['Data da Venda'], dayfirst=True, errors='coerce')
+
+# Mesclar todas as informações para o dataframe final
 df_total = df_vendas.merge(df_clientes, on='ID Cliente', how='left') \
-                    .merge(df_produtos, on='ID Produto', how='left') \
-                    .merge(df_lojas, on='ID Loja', how='left')
+                   .merge(df_produtos, on='ID Produto', how='left') \
+                   .merge(df_lojas, on='ID Loja', how='left')
 
-# Convertando a coluna 'Data da Venda' para datetime:
-df_total['Data da Venda'] = pd.to_datetime(df_total['Data da Venda'], dayfirst=True)
-
-# Criando colunas auxiliares para análise:
+# Criar colunas auxiliares
 df_total['Ano'] = df_total['Data da Venda'].dt.year
 df_total['Valor da Venda'] = df_total['Qtd Vendida'] * df_total['Preço Unitario']
 
-# Visualizando as primeiras linhas para conferência:
-print(df_total.head())
-print("Base Completa:", df_total.shape)
+# --- Preparação dos filtros para o dashboard ---
 
-"""# Gerando GRÁFICOS:"""
-
-# Preparar filtros
 filtros = {
-    "produto": df_total["Produto"].unique() if "Produto" in df_total.columns else [],
-    "loja": df_total["Nome da Loja"].unique() if "Nome da Loja" in df_total.columns else [],
-    "cliente": df_total["Nome Completo"].unique() if "Nome Completo" in df_total.columns else [],
-    "marca": df_total["Marca"].unique() if "Marca" in df_total.columns else [],
-    "tipo": df_total["Tipo do Produto"].unique() if "Tipo do Produto" in df_total.columns else [],
+    "tipo": df_total["Tipo do Produto"].dropna().unique(),
+    "marca": df_total["Marca"].dropna().unique(),
+    "produto": df_total["Produto"].dropna().unique(),
+    "loja": df_total["Nome da Loja"].dropna().unique(),
+    "cliente": df_total["Nome Completo"].dropna().unique(),
 }
 
-app = dash.Dash(__name__, external_stylesheets=[dbc.themes.CYBORG])
+# --- Montagem do dashboard com Dash e Bootstrap ---
+
+app = Dash(__name__, external_stylesheets=[dbc.themes.CYBORG])
 server = app.server
 
 app.layout = dbc.Container([
     html.H1("📊 Dashboard de Vendas", className="text-center my-4"),
 
     dbc.Row([
-        dbc.Col(dcc.Dropdown(id='filtro_tipo', options=[{'label': i, 'value': i} for i in filtros['tipo']],
-                             placeholder="Selecione o Tipo de Produto"), md=4),
-        dbc.Col(dcc.Dropdown(id='filtro_marca', placeholder="Selecione a Marca"), md=4),
-        dbc.Col(dcc.Dropdown(id='filtro_produto', options=[{'label': i, 'value': i} for i in filtros['produto']],
-                             multi=True, placeholder="Filtrar por Produto"), md=4),
-        dbc.Col(dcc.Dropdown(id='filtro_loja', options=[{'label': i, 'value': i} for i in filtros['loja']],
-                             multi=True, placeholder="Filtrar por Loja"), md=4),
-        dbc.Col(dcc.Dropdown(id='filtro_cliente', options=[{'label': i, 'value': i} for i in filtros['cliente']],
-                             multi=True, placeholder="Filtrar por Cliente"), md=4),
+        dbc.Col(dcc.Dropdown(
+            id='filtro_tipo',
+            options=[{'label': i, 'value': i} for i in sorted(filtros['tipo'])],
+            placeholder="Selecione o Tipo de Produto"
+        ), md=4),
+
+        dbc.Col(dcc.Dropdown(
+            id='filtro_marca',
+            placeholder="Selecione a Marca"
+        ), md=4),
+
+        dbc.Col(dcc.Dropdown(
+            id='filtro_produto',
+            options=[{'label': i, 'value': i} for i in sorted(filtros['produto'])],
+            multi=True,
+            placeholder="Filtrar por Produto"
+        ), md=4),
+
+        dbc.Col(dcc.Dropdown(
+            id='filtro_loja',
+            options=[{'label': i, 'value': i} for i in sorted(filtros['loja'])],
+            multi=True,
+            placeholder="Filtrar por Loja"
+        ), md=4),
+
+        dbc.Col(dcc.Dropdown(
+            id='filtro_cliente',
+            options=[{'label': i, 'value': i} for i in sorted(filtros['cliente'])],
+            multi=True,
+            placeholder="Filtrar por Cliente"
+        ), md=4),
     ], className="mb-4"),
 
     dbc.Row([
@@ -193,16 +124,18 @@ app.layout = dbc.Container([
     ]),
 ], fluid=True)
 
+# Atualizar opções da marca conforme o tipo selecionado
 @app.callback(
     Output('filtro_marca', 'options'),
     Input('filtro_tipo', 'value')
 )
 def atualizar_marcas(tipo):
-    if tipo and "Tipo do Produto" in df_total.columns:
+    if tipo:
         marcas = df_total[df_total['Tipo do Produto'] == tipo]['Marca'].dropna().unique()
-        return [{'label': m, 'value': m} for m in marcas]
+        return [{'label': m, 'value': m} for m in sorted(marcas)]
     return []
 
+# Atualizar gráficos conforme filtros selecionados
 @app.callback(
     [Output('grafico_ano', 'figure'),
      Output('grafico_cliente', 'figure'),
@@ -219,52 +152,83 @@ def atualizar_marcas(tipo):
 def atualizar_graficos(tipo, marca, produtos, lojas, clientes):
     df = df_total.copy()
 
-    if tipo and "Tipo do Produto" in df.columns:
+    if tipo:
         df = df[df['Tipo do Produto'] == tipo]
-    if marca and "Marca" in df.columns:
+    if marca:
         df = df[df['Marca'] == marca]
-    if produtos and "Produto" in df.columns:
+    if produtos:
         df = df[df['Produto'].isin(produtos)]
-    if lojas and "Nome da Loja" in df.columns:
+    if lojas:
         df = df[df['Nome da Loja'].isin(lojas)]
-    if clientes and "Nome Completo" in df.columns:
+    if clientes:
         df = df[df['Nome Completo'].isin(clientes)]
 
-    # Garantir datetime
-    if not pd.api.types.is_datetime64_any_dtype(df["Data da Venda"]):
-        df["Data da Venda"] = pd.to_datetime(df["Data da Venda"])
+    # Garantir que a coluna 'Data da Venda' é datetime
+    df['Data da Venda'] = pd.to_datetime(df['Data da Venda'], errors='coerce')
 
     # Gráfico 1 - Vendas por Ano
-    fig1 = px.bar(df.groupby("Ano")["Valor da Venda"].sum().reset_index(),
-                  x="Ano", y="Valor da Venda", title="Vendas por Ano",
-                  color_discrete_sequence=["#00BFFF"], template='plotly_dark')
+    fig1 = px.bar(
+        df.groupby('Ano')['Valor da Venda'].sum().reset_index(),
+        x='Ano', y='Valor da Venda',
+        title='Vendas por Ano',
+        color_discrete_sequence=['#00BFFF'],
+        template='plotly_dark'
+    )
 
     # Gráfico 2 - Top 10 Clientes
-    fig2 = px.bar(df.groupby("Nome Completo")["Valor da Venda"].sum().nlargest(10).reset_index(),
-                  x="Valor da Venda", y="Nome Completo", orientation='h',
-                  title="Top 10 Clientes", color_discrete_sequence=["#FF7F50"], template='plotly_dark')
+    top_clientes = df.groupby('Nome Completo')['Valor da Venda'].sum().nlargest(10).reset_index()
+    fig2 = px.bar(
+        top_clientes,
+        x='Valor da Venda', y='Nome Completo',
+        orientation='h',
+        title='Top 10 Clientes',
+        color_discrete_sequence=['#FF7F50'],
+        template='plotly_dark'
+    )
 
     # Gráfico 3 - Top 10 Produtos
-    fig3 = px.line(df.groupby("Produto")["Valor da Venda"].sum().nlargest(10).reset_index(),
-                   x="Produto", y="Valor da Venda", title="Top 10 Produtos",
-                   markers=True, color_discrete_sequence=["#32CD32"], template='plotly_dark')
+    top_produtos = df.groupby('Produto')['Valor da Venda'].sum().nlargest(10).reset_index()
+    fig3 = px.line(
+        top_produtos,
+        x='Produto', y='Valor da Venda',
+        title='Top 10 Produtos',
+        markers=True,
+        color_discrete_sequence=['#32CD32'],
+        template='plotly_dark'
+    )
 
     # Gráfico 4 - Vendas por Loja
-    fig4 = px.bar(df.groupby("Nome da Loja")["Valor da Venda"].sum().reset_index(),
-                  x="Nome da Loja", y="Valor da Venda", title="Vendas por Loja",
-                  color_discrete_sequence=["#FFD700"], template='plotly_dark')
+    vendas_lojas = df.groupby('Nome da Loja')['Valor da Venda'].sum().reset_index()
+    fig4 = px.bar(
+        vendas_lojas,
+        x='Nome da Loja', y='Valor da Venda',
+        title='Vendas por Loja',
+        color_discrete_sequence=['#FFD700'],
+        template='plotly_dark'
+    )
 
     # Gráfico 5 - Distribuição por Tipo de Produto
-    fig5 = px.pie(df, names="Tipo do Produto", values="Valor da Venda", title="Distribuição por Tipo de Produto",
-                  color_discrete_sequence=px.colors.qualitative.Set3, template='plotly_dark')
+    fig5 = px.pie(
+        df,
+        names='Tipo do Produto', values='Valor da Venda',
+        title='Distribuição por Tipo de Produto',
+        color_discrete_sequence=px.colors.qualitative.Set3,
+        template='plotly_dark'
+    )
 
-    # Gráfico 6 - Evolução Mensal
-    df["Mês"] = df["Data da Venda"].dt.to_period("M").astype(str)
-    fig6 = px.area(df.groupby("Mês")["Valor da Venda"].sum().reset_index(),
-                   x="Mês", y="Valor da Venda", title="Evolução Mensal de Vendas",
-                   color_discrete_sequence=["#1E90FF"], template='plotly_dark')
+    # Gráfico 6 - Evolução Mensal de Vendas
+    df['Mês'] = df['Data da Venda'].dt.to_period('M').astype(str)
+    vendas_mes = df.groupby('Mês')['Valor da Venda'].sum().reset_index()
+    fig6 = px.area(
+        vendas_mes,
+        x='Mês', y='Valor da Venda',
+        title='Evolução Mensal de Vendas',
+        color_discrete_sequence=['#1E90FF'],
+        template='plotly_dark'
+    )
 
     return fig1, fig2, fig3, fig4, fig5, fig6
+
 
 if __name__ == '__main__':
     app.run_server(debug=True)
