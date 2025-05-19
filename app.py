@@ -5,8 +5,6 @@ import plotly.express as px
 import plotly.graph_objects as go
 import plotly.io as pio
 from dash import Dash, dcc, html, Input, Output
-from jupyter_dash import JupyterDash
-import dash_bootstrap_components as dbc
 import dash
 
 arquivos_vendas = [
