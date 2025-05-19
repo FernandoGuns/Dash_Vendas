@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 # --- Leitura das bases de dados ---
 
 # Lista dos arquivos de vendas
