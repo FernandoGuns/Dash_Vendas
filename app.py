@@ -1,8 +1,4 @@
 # -*- coding: utf-8 -*-
-import pandas as pd
-import plotly.express as px
-from dash import Dash, dcc, html, Input, Output
-import dash_bootstrap_components as dbc  # Import necessário para o tema
 
 # --- Leitura das bases de dados ---
 
